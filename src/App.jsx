@@ -1,269 +1,307 @@
 import React, { useState, useEffect } from 'react';
+import Navbar from './components/Navbar';
+import MovieList from './components/MovieList';
+import VideoPlayer from './components/VideoPlayer';
+import Footer from './components/Footer';
 import './App.css';
-import Navbar from './components/Navbar.jsx';
-import MovieCard from './components/MovieCard.jsx';
-import VideoPlayer from './components/VideoPlayer.jsx';
 
 function App() {
-  // OMDb API configuration
-  const OMDB_API_KEY = '8cf14f61';
-  const OMDB_BASE_URL = 'https://www.omdbapi.com/';
-  
-  const [selectedMovie, setSelectedMovie] = useState(null);
+  const TMDB_API_KEY = '5311371d6c5f1bf83718e50f58f8f076';
+  const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+
   const [movies, setMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMovies, setFilteredMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [featuredMovie, setFeaturedMovie] = useState(null);
-  
-  // Movie trailers mapping (sample videos for different movies)
-  const movieTrailers = {
-    'The Dark Knight': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    'Inception': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    'Interstellar': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    'The Matrix': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    'Pulp Fiction': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-    'The Shawshank Redemption': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-    'Forrest Gump': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-    'Fight Club': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-    'Goodfellas': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
-    'The Godfather': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-    'Avengers Endgame': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
-    'Spider-Man': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4'
-  };
-  
-  // useEffect to fetch popular movies on component mount
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [activeTab, setActiveTab] = useState('movies');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   useEffect(() => {
-    const fetchPopularMovies = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const popularMovieTitles = [
-          'The Dark Knight',
-          'Inception',
-          'Interstellar',
-          'The Matrix',
-          'Pulp Fiction',
-          'The Shawshank Redemption',
-          'Forrest Gump',
-          'Fight Club',
-          'Goodfellas',
-          'The Godfather',
-          'Avengers Endgame',
-          'Spider-Man'
-        ];
-        
-        const moviePromises = popularMovieTitles.map(title =>
-          fetch(`${OMDB_BASE_URL}?apikey=${OMDB_API_KEY}&t=${encodeURIComponent(title)}`)
-            .then(res => res.json())
-        );
-        
-        const movieResults = await Promise.all(moviePromises);
-        
-        const formattedMovies = movieResults
-          .filter(movie => movie.Response === 'True')
-          .map(movie => ({
-            id: movie.imdbID,
-            title: movie.Title,
-            poster: movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/300x450/374151/ffffff?text=No+Poster',
-            rating: movie.imdbRating !== 'N/A' ? parseFloat(movie.imdbRating) : 0,
-            year: movie.Year,
-            genre: movie.Genre,
-            description: movie.Plot,
-            director: movie.Director,
-            actors: movie.Actors,
-            runtime: movie.Runtime,
-            videoUrl: movieTrailers[movie.Title] || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-          }));
-        
-        setMovies(formattedMovies);
-        setFilteredMovies(formattedMovies);
-        if (formattedMovies.length > 0) {
-          setFeaturedMovie(formattedMovies[0]);
-        }
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error fetching movies:', err);
-        setError('Failed to load movies. Please try again later.');
-        setIsLoading(false);
-      }
-    };
-    
-    fetchPopularMovies();
-  }, []);
-  
-  // useEffect to search movies from OMDb API
-  useEffect(() => {
-    const searchMovies = async () => {
-      if (searchQuery.trim() === '') {
-        setFilteredMovies(movies);
-        return;
-      }
-      
-      setIsLoading(true);
-      
-      try {
-        const response = await fetch(
-          `${OMDB_BASE_URL}?apikey=${OMDB_API_KEY}&s=${encodeURIComponent(searchQuery)}`
-        );
-        const data = await response.json();
-        
-        if (data.Response === 'True') {
-          const detailPromises = data.Search.slice(0, 8).map(movie =>
-            fetch(`${OMDB_BASE_URL}?apikey=${OMDB_API_KEY}&i=${movie.imdbID}`)
-              .then(res => res.json())
-          );
-          
-          const detailedResults = await Promise.all(detailPromises);
-          
-          const formattedResults = detailedResults
-            .filter(movie => movie.Response === 'True')
-            .map(movie => ({
-              id: movie.imdbID,
-              title: movie.Title,
-              poster: movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/300x450/374151/ffffff?text=No+Poster',
-              rating: movie.imdbRating !== 'N/A' ? parseFloat(movie.imdbRating) : 0,
-              year: movie.Year,
-              genre: movie.Genre,
-              description: movie.Plot,
-              director: movie.Director,
-              actors: movie.Actors,
-              runtime: movie.Runtime,
-              videoUrl: movieTrailers[movie.Title] || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-            }));
-          
-          setFilteredMovies(formattedResults);
-        } else {
-          setFilteredMovies([]);
-        }
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error searching movies:', err);
-        setFilteredMovies([]);
-        setIsLoading(false);
-      }
-    };
-    
-    const timeoutId = setTimeout(() => {
-      searchMovies();
+    setCurrentPage(1); // Reset to page 1 when search or tab changes
+    if (!searchQuery.trim()) {
+      fetchTrendingContent(1);
+      return;
+    }
+    const delayDebounce = setTimeout(() => {
+      searchContent(searchQuery, 1);
     }, 500);
-    
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
-  
-  const handleMovieClick = (movie) => {
-    console.log('Movie clicked:', movie.title, 'Video URL:', movie.videoUrl);
-    setSelectedMovie(movie);
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery, activeTab]);
+
+  const fetchTrendingContent = async (page = 1) => {
+    try {
+      setLoading(true);
+      setError(null);
+      let endpoint = '';
+      
+      switch (activeTab) {
+        case 'movies':
+          endpoint = `/trending/movie/day?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+          break;
+        case 'tv':
+          endpoint = `/trending/tv/day?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+          break;
+        case 'anime':
+          endpoint = `/discover/tv?api_key=${TMDB_API_KEY}&with_genres=16&with_keywords=210024&language=en-US&page=${page}`;
+          break;
+        default:
+          endpoint = `/trending/movie/day?api_key=${TMDB_API_KEY}&language=en-US&page=${page}`;
+      }
+      
+      const response = await fetch(`${TMDB_BASE_URL}${endpoint}`);
+      if (!response.ok) throw new Error('Failed to fetch content');
+      const data = await response.json();
+      setMovies(data.results);
+      setTotalPages(Math.min(data.total_pages, 500)); // TMDB limits to 500 pages
+      setCurrentPage(page);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
   };
 
-  const handleCloseVideo = () => {
-    setSelectedMovie(null);
+  const searchContent = async (query, page = 1) => {
+    try {
+      setLoading(true);
+      setError(null);
+      let endpoint = '';
+      
+      switch (activeTab) {
+        case 'movies':
+          endpoint = `/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
+          break;
+        case 'tv':
+          endpoint = `/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
+          break;
+        case 'anime':
+          endpoint = `/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&with_genres=16&page=${page}`;
+          break;
+        default:
+          endpoint = `/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
+      }
+      
+      const response = await fetch(`${TMDB_BASE_URL}${endpoint}`);
+      if (!response.ok) throw new Error('Failed to search');
+      const data = await response.json();
+      setMovies(data.results);
+      setTotalPages(Math.min(data.total_pages, 500)); // TMDB limits to 500 pages
+      setCurrentPage(page);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
   };
-  
-  const handleSearch = (query) => {
-    setSearchQuery(query);
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      if (searchQuery.trim()) {
+        searchContent(searchQuery, page);
+      } else {
+        fetchTrendingContent(page);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const maxVisiblePages = 10;
+    let startPage, endPage;
+
+    if (totalPages <= maxVisiblePages) {
+      startPage = 1;
+      endPage = totalPages;
+    } else {
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+      if (currentPage <= halfVisible) {
+        startPage = 1;
+        endPage = maxVisiblePages;
+      } else if (currentPage + halfVisible >= totalPages) {
+        startPage = totalPages - maxVisiblePages + 1;
+        endPage = totalPages;
+      } else {
+        startPage = currentPage - halfVisible;
+        endPage = currentPage + halfVisible;
+      }
+    }
+
+    const pages = [];
+    
+    // Previous button
+    pages.push(
+      <button
+        key="prev"
+        onClick={() => handlePageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`px-3 py-2 mx-1 rounded ${
+          currentPage === 1
+            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            : 'bg-gray-800 text-white hover:bg-gray-700'
+        }`}
+      >
+        ‹
+      </button>
+    );
+
+    // First page
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => handlePageChange(1)}
+          className="px-3 py-2 mx-1 rounded bg-gray-800 text-white hover:bg-gray-700"
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        pages.push(<span key="ellipsis1" className="px-2 text-gray-500">...</span>);
+      }
+    }
+
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`px-3 py-2 mx-1 rounded ${
+            currentPage === i
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-800 text-white hover:bg-gray-700'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    // Last page
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(<span key="ellipsis2" className="px-2 text-gray-500">...</span>);
+      }
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => handlePageChange(totalPages)}
+          className="px-3 py-2 mx-1 rounded bg-gray-800 text-white hover:bg-gray-700"
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    // Next button
+    pages.push(
+      <button
+        key="next"
+        onClick={() => handlePageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`px-3 py-2 mx-1 rounded ${
+          currentPage === totalPages
+            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            : 'bg-gray-800 text-white hover:bg-gray-700'
+        }`}
+      >
+        ›
+      </button>
+    );
+
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="flex flex-wrap justify-center">
+          {pages}
+        </div>
+      </div>
+    );
+  };
+
+  const getTabTitle = () => {
+    const titles = {
+      movies: searchQuery ? `Movie Results for "${searchQuery}"` : 'Trending Movies',
+      tv: searchQuery ? `TV Series Results for "${searchQuery}"` : 'Trending TV Series',
+      anime: searchQuery ? `Anime Results for "${searchQuery}"` : 'Popular Anime'
+    };
+    return titles[activeTab];
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <Navbar 
-        onSearch={handleSearch}
-        searchQuery={searchQuery}
-      />
-      
-      {selectedMovie ? (
-        <div className="p-4">
+    <div className="min-h-screen bg-gray-900 flex flex-col">
+      <Navbar onSearch={setSearchQuery} searchQuery={searchQuery} />
+      {selectedMovie && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex items-center justify-center overflow-y-auto">
           <VideoPlayer 
-            videoUrl={selectedMovie.videoUrl}
-            title={selectedMovie.title}
-            description={selectedMovie.description}
-            movie={selectedMovie}
-            onClose={handleCloseVideo}
+            movie={selectedMovie} 
+            title={selectedMovie.title || selectedMovie.name} 
+            description={selectedMovie.overview} 
+            onClose={() => setSelectedMovie(null)}
+            type={activeTab === 'movies' ? 'movie' : 'tv'}
+            searchQuery={searchQuery}
+            onSearch={setSearchQuery}
           />
         </div>
-      ) : (
-        <div className="container mx-auto px-4 py-8">
-          {!searchQuery && featuredMovie && (
-            <div className="mb-12 relative overflow-hidden rounded-lg">
-              <div className="relative h-[500px] bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent">
-                <img 
-                  src={featuredMovie.poster} 
-                  alt={featuredMovie.title}
-                  className="absolute inset-0 w-full h-full object-cover opacity-30"
-                />
-                <div className="relative z-10 h-full flex flex-col justify-center px-8 md:px-12 lg:px-16">
-                  <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-                    {featuredMovie.title}
-                  </h1>
-                  <div className="flex items-center gap-4 mb-4">
-                    <span className="bg-red-500 text-white px-3 py-1 rounded font-semibold">
-                      ⭐ {featuredMovie.rating}
-                    </span>
-                    <span className="text-gray-300">{featuredMovie.year}</span>
-                    <span className="text-gray-300">{featuredMovie.runtime}</span>
-                  </div>
-                  <p className="text-gray-300 text-lg max-w-2xl mb-6">
-                    {featuredMovie.description}
-                  </p>
-                  <div className="flex gap-4">
-                    <button 
-                      onClick={() => handleMovieClick(featuredMovie)}
-                      className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors flex items-center gap-2"
-                    >
-                      ▶ Play Trailer
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-300 px-4 py-3 rounded mb-6">
-              {error}
-            </div>
-          )}
-
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-white text-2xl animate-pulse">Loading movies...</div>
-            </div>
-          ) : (
-            <>
-              {searchQuery && (
-                <div className="mb-6">
-                  <p className="text-gray-300 text-lg">
-                    Found {filteredMovies.length} result(s) for "{searchQuery}"
-                  </p>
-                </div>
-              )}
-
-              <section className="mb-12">
-                <h2 className="text-3xl font-bold text-white mb-6">
-                  {searchQuery ? 'Search Results' : 'Featured Movies'}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredMovies.length > 0 ? (
-                    filteredMovies.map((movie) => (
-                      <MovieCard 
-                        key={movie.id}
-                        movie={movie}
-                        onMovieClick={handleMovieClick}
-                      />
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center text-gray-400 text-xl py-12">
-                      No movies found. Try a different search term.
-                    </div>
-                  )}
-                </div>
-              </section>
-            </>
-          )}
-        </div>
       )}
+      <main className="flex-grow container mx-auto px-4">
+        {/* Tab Navigation */}
+        <div className="flex justify-center py-6">
+          <div className="flex bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('movies')}
+              className={`px-6 py-3 rounded-md font-medium transition-colors ${
+                activeTab === 'movies'
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              Movies
+            </button>
+            <button
+              onClick={() => setActiveTab('tv')}
+              className={`px-6 py-3 rounded-md font-medium transition-colors ${
+                activeTab === 'tv'
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              TV Series
+            </button>
+            <button
+              onClick={() => setActiveTab('anime')}
+              className={`px-6 py-3 rounded-md font-medium transition-colors ${
+                activeTab === 'anime'
+                  ? 'bg-red-600 text-white'
+                  : 'text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              Anime
+            </button>
+          </div>
+        </div>
+        
+        <div className="py-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            {getTabTitle()}
+          </h2>
+        </div>
+        
+        {error && (
+          <div className="text-center py-20">
+            <p className="text-red-500 text-xl mb-4">⚠️ Error: {error}</p>
+            <button onClick={() => fetchTrendingContent(1)} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg">Try Again</button>
+          </div>
+        )}
+        {!error && <MovieList movies={movies.slice(0, 18)} onMovieClick={setSelectedMovie} loading={loading} />}
+        
+        {/* Pagination */}
+        {!error && !loading && renderPagination()}
+      </main>
+      <Footer />
     </div>
   );
 }
