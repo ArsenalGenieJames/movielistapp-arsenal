@@ -3,10 +3,9 @@ import Navbar from './components/Navbar';
 import MovieList from './components/MovieList';
 import VideoPlayer from './components/VideoPlayer';
 import Footer from './components/Footer';
-import './App.css';
 
 function App() {
-  const TMDB_API_KEY = '5311371d6c5f1bf83718e50f58f8f076';
+  const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
   const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
   const [movies, setMovies] = useState([]);
@@ -96,6 +95,10 @@ function App() {
     }
   };
 
+  const handleMovieClick = (movie) => {
+    setSelectedMovie(movie);
+  };
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       if (searchQuery.trim()) {
@@ -160,7 +163,11 @@ function App() {
         </button>
       );
       if (startPage > 2) {
-        pages.push(<span key="ellipsis1" className="px-2 text-gray-500">...</span>);
+        pages.push(
+          <span key="ellipsis1" className="px-3 py-2 mx-1 text-gray-400">
+            ...
+          </span>
+        );
       }
     }
 
@@ -171,7 +178,7 @@ function App() {
           key={i}
           onClick={() => handlePageChange(i)}
           className={`px-3 py-2 mx-1 rounded ${
-            currentPage === i
+            i === currentPage
               ? 'bg-red-600 text-white'
               : 'bg-gray-800 text-white hover:bg-gray-700'
           }`}
@@ -184,7 +191,11 @@ function App() {
     // Last page
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
-        pages.push(<span key="ellipsis2" className="px-2 text-gray-500">...</span>);
+        pages.push(
+          <span key="ellipsis2" className="px-3 py-2 mx-1 text-gray-400">
+            ...
+          </span>
+        );
       }
       pages.push(
         <button

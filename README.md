@@ -1,3 +1,49 @@
+# Movie List App Arsenal
+
+A modern movie and TV show streaming application built with React and Vite.
+
+## Features
+
+- Browse trending movies and TV shows
+- Search for movies, TV shows, and anime
+- Stream content from multiple sources
+- Responsive design with Tailwind CSS
+
+## Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env` file in the root directory and add your TMDB API key:
+   ```
+   VITE_TMDB_API_KEY=your_api_key_here
+   ```
+   
+   You can get a free API key from [The Movie Database (TMDB)](https://www.themoviedb.org/settings/api)
+
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Environment Variables
+
+- `VITE_TMDB_API_KEY` - Your TMDB API key (required)
+
+See `.env.example` for reference.
+
+## Tech Stack
+
+- React
+- Vite
+- Tailwind CSS
+- TMDB API
+
+---
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
